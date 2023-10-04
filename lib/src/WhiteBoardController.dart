@@ -17,6 +17,10 @@ class WhiteBoardController {
   /// Return [false] if there is no stroke to redo, otherwise return [true].
   bool redo() => _delegate.onRedo();
 
+  /// Redo last undo stroke
+  /// Return [false] if there is no stroke to redo, otherwise return [true].
+  bool checkChanges() => _delegate.checkAnyChangesMake();
+
   /// Clear all the strokes
   void clear() => _delegate.onClear();
 }
@@ -27,6 +31,7 @@ class _WhiteBoardControllerDelegate {
   late bool Function() onUndo;
 
   late bool Function() onRedo;
+  late bool Function() checkAnyChangesMake;
 
   late VoidCallback onClear;
 }

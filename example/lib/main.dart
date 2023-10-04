@@ -33,7 +33,9 @@ class _MyAppState extends State<MyApp> {
           child: Column(
             children: [
               Expanded(
-                child: WhiteBoard(),
+                child: WhiteBoard(
+                  screenSize: MediaQuery.of(context).size,
+                ),
               ),
             ],
           ),
