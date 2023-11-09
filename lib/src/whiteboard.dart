@@ -74,13 +74,10 @@ class _WhiteBoardState extends State<WhiteBoard> {
     ).paint(canvas, _canvasSize);
 
     // Stop emulating and convert to Image
-    final result = await recorder.endRecording().toImage(
-        image != null ? image!.width : _canvasSize.width.floor(),
-        image != null ? image!.height : _canvasSize.height.floor());
+    final result = await recorder.endRecording().toImage(image != null ? image!.width : _canvasSize.width.floor(), image != null ? image!.height : _canvasSize.height.floor());
 
     // Cast image data to byte array with converting to given format
-    final converted =
-        (await result.toByteData(format: format))!.buffer.asUint8List();
+    final converted = (await result.toByteData(format: format))!.buffer.asUint8List();
 
     widget.onConvertImage?.call(converted);
   }
@@ -90,10 +87,7 @@ class _WhiteBoardState extends State<WhiteBoard> {
     isImageLoaded = false;
     setState(() {});
     Uint8List bytes = widget.backgroundImage!.contains('http')
-        ? (await NetworkAssetBundle(Uri.parse(widget.backgroundImage!))
-                .load(widget.backgroundImage!))
-            .buffer
-            .asUint8List()
+        ? (await NetworkAssetBundle(Uri.parse(widget.backgroundImage!)).load(widget.backgroundImage!)).buffer.asUint8List()
         : (await File(widget.backgroundImage!).readAsBytes());
     final data = resizeImage(bytes);
     image = await loadImage(data);
@@ -111,13 +105,14 @@ class _WhiteBoardState extends State<WhiteBoard> {
     return completer!.future;
   }
 
+  double? newHeight;
+
   Uint8List resizeImage(Uint8List data) {
     Uint8List resizedData = data;
     IMG.Image? img = IMG.decodeImage(data);
-    IMG.Image resized = IMG.copyResize(img!,
-        width: widget.screenSize.width.toInt(),
-        height: (widget.screenSize.height * .75).toInt(),
-        interpolation: IMG.Interpolation.cubic);
+    final widthRatio = img!.width / widget.screenSize.width.toInt();
+    newHeight = img.height / widthRatio;
+    IMG.Image resized = IMG.copyResize(img, width: widget.screenSize.width.toInt(), height: newHeight!.floor(), interpolation: IMG.Interpolation.cubic);
     resizedData = IMG.encodeJpg(resized);
     return resizedData;
   }
@@ -207,29 +202,29 @@ class _WhiteBoardState extends State<WhiteBoard> {
   @override
   Widget build(BuildContext context) {
     return isImageLoaded || widget.backgroundImage == null
-        ? Container(
-            height: widget.screenSize.height,
-            width: widget.screenSize.width,
-            child: GestureDetector(
-              onPanStart: (details) => _start(
-                details.localPosition.dx,
-                details.localPosition.dy,
-              ),
-              onPanUpdate: (details) {
-                _add(
+        ? Center(
+            child: Container(
+              height: newHeight,
+              width: widget.screenSize.width,
+              child: GestureDetector(
+                onPanStart: (details) => _start(
                   details.localPosition.dx,
                   details.localPosition.dy,
-                );
-              },
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  _canvasSize =
-                      Size(constraints.maxWidth, constraints.maxHeight);
-                  return CustomPaint(
-                    painter: _FreehandPainter(
-                        _strokes, widget.backgroundColor, image),
+                ),
+                onPanUpdate: (details) {
+                  _add(
+                    details.localPosition.dx,
+                    details.localPosition.dy,
                   );
                 },
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    _canvasSize = Size(constraints.maxWidth, constraints.maxHeight);
+                    return CustomPaint(
+                      painter: _FreehandPainter(_strokes, widget.backgroundColor, image),
+                    );
+                  },
+                ),
               ),
             ),
           )
